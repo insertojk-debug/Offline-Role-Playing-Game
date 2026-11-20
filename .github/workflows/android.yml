@@ -34,7 +34,7 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0" \
             "ndk;27.2.12479018"
-
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
           echo "NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
 
       - name: Set up Rust
@@ -42,21 +42,22 @@ jobs:
         with:
           targets: aarch64-linux-android
 
-      - name: Configure Android NDK archiver
+      - name: Configure Android NDK tool aliases
         run: |
           TOOLCHAIN_BIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
           test -x "$TOOLCHAIN_BIN/llvm-ar"
+          test -x "$TOOLCHAIN_BIN/ld.lld"
           ln -sf llvm-ar "$TOOLCHAIN_BIN/aarch64-linux-android-ar"
-          ls -l "$TOOLCHAIN_BIN/aarch64-linux-android-ar"
+          ln -sf ld.lld "$TOOLCHAIN_BIN/aarch64-linux-android-ld"
+          test -x "$TOOLCHAIN_BIN/aarch64-linux-android-ar"
+          test -x "$TOOLCHAIN_BIN/aarch64-linux-android-ld"
+          ls -l "$TOOLCHAIN_BIN/aarch64-linux-android-ar" "$TOOLCHAIN_BIN/aarch64-linux-android-ld"
 
       - name: Install cargo-quad-apk
         run: cargo install cargo-quad-apk --locked
 
       - name: Build Android APK
-        run: |
-          echo "Android SDK: $ANDROID_HOME"
-          echo "Android NDK: $NDK_HOME"
-          cargo quad-apk build --release
+        run: cargo quad-apk build --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
