@@ -1,4 +1,3 @@
-
 name: Build Android APK
 
 on:
@@ -11,40 +10,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Setup Java
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Android licenses
-        run: yes | sdkmanager --licenses || true
-
-      - name: Install Android SDK
+      # GitHub's Ubuntu runner already includes Android command-line tools.
+      # Avoid setup-android@v3 here because its setup step can request the
+      # obsolete SDK package named "tools".
+      - name: Configure Android SDK
         run: |
-          sdkmanager --install \
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+
+      - name: Install Android SDK components
+        run: |
+          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "${ANDROID_HOME}/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses || true
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install \
+            "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
             "ndk;27.2.12479018"
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
 
-      - name: Setup Rust
+      - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
 
       - name: Install cargo-quad-apk
-        run: cargo install cargo-quad-apk
+        run: cargo install cargo-quad-apk --locked
 
-      - name: Build APK
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
+      - name: Build Android APK
         run: cargo quad-apk build --release
 
       - name: Upload APK
