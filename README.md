@@ -22,7 +22,7 @@ This is a playable foundation, not a finished commercial RPG. It currently uses 
 5. When the workflow finishes, open the successful run and find **Artifacts** near the bottom.
 6. Download `arcane-frontier-android-apk`, extract the ZIP, and install the APK on your Android device. You may need to allow installation from the file manager you use.
 
-The workflow installs Android SDK Platform 35 and Build Tools 35.0.0 inside the `notfl3/cargo-apk` container before running `cargo quad-apk build --release`. The project currently targets Android ARM64 (`aarch64`), which is suitable for most modern Android phones. [Macroquad Android build guide](https://macroquad.rs/articles/android/).
+The workflow uses Macroquad's documented `cargo quad-apk build --release` Docker build path. The project currently targets Android ARM64 (`aarch64`), which is suitable for most modern Android phones. [Macroquad Android build guide](https://macroquad.rs/articles/android/).
 
 ## Run on a computer
 
