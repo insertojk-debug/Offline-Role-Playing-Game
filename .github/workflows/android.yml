@@ -19,9 +19,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # GitHub's Ubuntu runner already includes Android command-line tools.
-      # Avoid setup-android@v3 here because its setup step can request the
-      # obsolete SDK package named "tools".
       - name: Configure Android SDK
         run: |
           echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
@@ -29,10 +26,7 @@ jobs:
 
       - name: Install Android SDK components
         run: |
-          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
-          if [ ! -x "$SDKMANAGER" ]; then
-            SDKMANAGER="$(find "${ANDROID_HOME}/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
-          fi
+          SDKMANAGER="$(find "${ANDROID_HOME}/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
           test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses || true
           "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install \
@@ -41,6 +35,8 @@ jobs:
             "build-tools;35.0.0" \
             "ndk;27.2.12479018"
           test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -d "$ANDROID_HOME/ndk/27.2.12479018"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -51,7 +47,12 @@ jobs:
         run: cargo install cargo-quad-apk --locked
 
       - name: Build Android APK
-        run: cargo quad-apk build --release
+        run: |
+          echo "Android SDK: $ANDROID_HOME"
+          echo "Android NDK: $NDK_HOME"
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -d "$NDK_HOME"
+          cargo quad-apk build --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
