@@ -183,7 +183,7 @@ async fn main() {
 
         // Mouse support makes the same build playable on desktop.
         if is_mouse_button_down(MouseButton::Left) {
-            let p = mouse_position().into();
+            let p: Vec2 = mouse_position().into();
             if p.distance(joy_center) < 100.0 && p.x < sw * 0.45 {
                 joystick_active = true;
                 joystick = ((p - joy_center) / 42.0).clamp_length_max(1.0);
