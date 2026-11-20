@@ -1,41 +1,43 @@
+
 name: Build Android APK
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Check out source
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Android SDK platform 35 and build APK
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK components
         run: |
-          docker run --rm \\
-            --entrypoint /bin/bash \\
-            -v "${{ github.workspace }}:/root/src" \\
-            -w /root/src \\
-            notfl3/cargo-apk:latest \\
-            -lc '
-              set -eux
-              export ANDROID_HOME=/opt/android-sdk-linux
-              export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018"
+          yes | sdkmanager --licenses
 
-              SDKMANAGER="$(find "$ANDROID_HOME" /opt -type f -name sdkmanager 2>/dev/null | head -n 1)"
-              if [ -z "$SDKMANAGER" ]; then
-                echo "sdkmanager was not found in the cargo-apk image."
-                exit 1
-              fi
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
 
-              yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses
-              "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platforms;android-35" "build-tools;35.0.0"
+      - name: Install cargo-quad-apk
+        run: cargo install cargo-quad-apk
 
-              test -f "$ANDROID_HOME/platforms/android-35/android.jar"
-              cargo quad-apk build --release
-            '
+      - name: Build APK
+        run: cargo quad-apk build --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
