@@ -1,0 +1,25 @@
+[package]
+name = "arcane_frontier"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+macroquad = "0.4.16"
+
+[package.metadata.android]
+label = "Arcane Frontier"
+package_name = "com.example.arcanefrontier"
+# Build only the common 64-bit Android ABI to keep CI faster.
+build_targets = ["aarch64-linux-android"]
+android_version = 35
+min_sdk_version = 23
+assets = "assets/"
+
+[package.metadata.android.activity_attributes]
+"android:exported" = "true"
+"android:screenOrientation" = "landscape"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
